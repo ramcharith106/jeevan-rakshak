@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
-import MapModal from "@/components/MapModal";
+import { getCurrentUser } from "@/lib/auth";
+import { useNavigate, useLocation } from "react-router-dom"; // ✅ added
 
 export default function RequestBlood() {
   const [form, setForm] = useState({
@@ -22,7 +23,18 @@ export default function RequestBlood() {
 
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [mapOpen, setMapOpen] = useState(false);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (!user) {
+      navigate("/login", {
+        state: { redirectTo: location.pathname },
+      });
+    }
+  }, []);
 
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,9 +43,18 @@ export default function RequestBlood() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setLoading(true);
+
+    const user = getCurrentUser(); // ✅ Get the logged-in user
+    if (!user) {
+      alert("Please login before submitting a request.");
+      setLoading(false);
+      return;
+    }
+
     try {
       await addDoc(collection(db, "requests"), {
         ...form,
+        userId: user.uid,
         createdAt: Timestamp.now(),
       });
       setSubmitted(true);
@@ -43,10 +64,6 @@ export default function RequestBlood() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLocationSelect = (address: string) => {
-    setForm((prev) => ({ ...prev, location: address }));
   };
 
   return (
@@ -87,24 +104,7 @@ export default function RequestBlood() {
               </select>
               <Input name="units" placeholder="Units Needed" required type="number" value={form.units} onChange={handleChange} />
               <Input name="hospital" placeholder="Hospital Name" required value={form.hospital} onChange={handleChange} />
-
-              <div className="flex flex-col gap-1">
-                <Input
-                  name="location"
-                  placeholder="Hospital Location"
-                  required
-                  value={form.location}
-                  onChange={handleChange}
-                />
-                <button
-                  type="button"
-                  onClick={() => setMapOpen(true)}
-                  className="text-sm text-blue-600 underline hover:text-blue-800"
-                >
-                  📍 Select on Map
-                </button>
-              </div>
-
+              <Input name="location" placeholder="Hospital Location" required value={form.location} onChange={handleChange} />
               <select
                 name="urgency"
                 value={form.urgency}
@@ -137,12 +137,6 @@ export default function RequestBlood() {
           </form>
         )}
       </div>
-
-      <MapModal
-        isOpen={mapOpen}
-        onClose={() => setMapOpen(false)}
-        onLocationSelect={handleLocationSelect}
-      />
     </div>
   );
 }

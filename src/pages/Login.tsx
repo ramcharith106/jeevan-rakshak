@@ -58,30 +58,58 @@ export default function Login() {
 
         {error && <div className="text-red-600 text-sm mt-4">{error}</div>}
 
-        {isRegistering ? (
-          <form onSubmit={handleRegister} className="mt-6 grid gap-4">
-            <Input name="email" type="email" placeholder="Email" required value={registerForm.email} onChange={handleChange} />
-            <Input name="password" type="password" placeholder="Password" required value={registerForm.password} onChange={handleChange} />
-            <Input name="phone" placeholder="Phone Number" required value={registerForm.phone} onChange={handleChange} />
-            <Input name="aadhaar" placeholder="Aadhaar Number" required value={registerForm.aadhaar} onChange={handleChange} />
-            <Input name="address" placeholder="Address" required value={registerForm.address} onChange={handleChange} />
-            <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">Register</Button>
-          </form>
-        ) : (
-          <>
-            <form onSubmit={handleEmailLogin} className="mt-6 grid gap-4">
-              <Input name="email" type="email" placeholder="Email" required value={form.email} onChange={handleChange} />
-              <Input name="password" type="password" placeholder="Password" required value={form.password} onChange={handleChange} />
-              <Button type="submit" className="bg-red-600 text-white hover:bg-red-700">Login</Button>
-            </form>
+       {isRegistering ? (
+  <form onSubmit={handleRegister} className="mt-6 grid gap-4">
+    <Input name="email" type="email" placeholder="Email" required value={registerForm.email} onChange={handleChange} />
+    <Input name="password" type="password" placeholder="Password" required value={registerForm.password} onChange={handleChange} />
+    <Input name="phone" placeholder="Phone Number" required value={registerForm.phone} onChange={handleChange} />
+    <Input name="aadhaar" placeholder="Aadhaar Number" required value={registerForm.aadhaar} onChange={handleChange} />
+    <Input name="address" placeholder="Address" required value={registerForm.address} onChange={handleChange} />
+    <Input name="dob" type="date" placeholder="Date of Birth" required value={registerForm.dob} onChange={handleChange} />
+    <Input name="weight" type="number" placeholder="Weight (kg)" required value={registerForm.weight} onChange={handleChange} />
 
-            <div className="my-4 text-center text-gray-400">or</div>
+    <select
+      name="bloodGroup"
+      required
+      value={registerForm.bloodGroup}
+      onChange={handleChange}
+      className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring focus:border-blue-500"
+    >
+      <option value="">Select Blood Group</option>
+      <option value="A+">A+</option>
+      <option value="A-">A-</option>
+      <option value="B+">B+</option>
+      <option value="B-">B-</option>
+      <option value="AB+">AB+</option>
+      <option value="AB-">AB-</option>
+      <option value="O+">O+</option>
+      <option value="O-">O-</option>
+    </select>
 
-            <Button onClick={handleGoogleLogin} className="bg-blue-600 hover:bg-blue-700 text-white w-full">
-              🟢 Sign in with Google
-            </Button>
-          </>
-        )}
+    <Input name="healthInfo" placeholder="General Health Information" required value={registerForm.healthInfo} onChange={handleChange} />
+    <Input name="emergencyContact1" placeholder="Emergency Contact 1 (Name & Phone)" required value={registerForm.emergencyContact1} onChange={handleChange} />
+    <Input name="emergencyContact2" placeholder="Emergency Contact 2 (Name & Phone)" required value={registerForm.emergencyContact2} onChange={handleChange} />
+
+    <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">
+      Register
+    </Button>
+  </form>
+) : (
+  <>
+    <form onSubmit={handleEmailLogin} className="mt-6 grid gap-4">
+      <Input name="email" type="email" placeholder="Email" required value={form.email} onChange={handleChange} />
+      <Input name="password" type="password" placeholder="Password" required value={form.password} onChange={handleChange} />
+      <Button type="submit" className="bg-red-600 text-white hover:bg-red-700">Login</Button>
+    </form>
+
+    <div className="my-4 text-center text-gray-400">or</div>
+
+    <Button onClick={handleGoogleLogin} className="bg-blue-600 hover:bg-blue-700 text-white w-full">
+      🟢 Sign in with Google
+    </Button>
+  </>
+)}
+
 
         <p className="text-center text-sm text-gray-600 mt-6">
           {isRegistering ? (
