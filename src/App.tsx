@@ -9,7 +9,15 @@ import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/ui/NavBar";
 import Footer from "./components/ui/Footer";
-import Profile from "@/pages/Profile"; // or Account
+import Profile from "@/pages/Profile";
+import FindDonors from "@/pages/FindDonors";
+import OnboardingForm from "./pages/OnboardingForm";
+import CampsAndBanks from "./pages/CampsAndBanks";
+import Leaderboard from "./pages/Leaderboard";
+import Admin from "./pages/Admin";
+import Learn from "./pages/Learn";
+import { Toaster } from "@/components/ui/toaster"; // Import the Toaster
+
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -19,14 +27,21 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/onboarding" element={<OnboardingForm />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/request" element={<Request />} />
           <Route path="/donate" element={<Donate />} />
+          <Route path="/find-donors" element={<FindDonors />} />
+          <Route path="/camps-and-banks" element={<CampsAndBanks />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/learn" element={<Learn />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
       <Footer />
+      <Toaster /> {/* Add the Toaster component here */}
     </div>
   );
 }

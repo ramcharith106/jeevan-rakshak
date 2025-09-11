@@ -4,10 +4,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
-import { getCurrentUser } from "@/lib/auth";
-import { useNavigate, useLocation } from "react-router-dom"; // ✅ added
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function RequestBlood() {
+  const { currentUser } = useAuth();
   const [form, setForm] = useState({
     name: "",
     relationship: "",
@@ -15,6 +17,7 @@ export default function RequestBlood() {
     units: "",
     hospital: "",
     location: "",
+    state: "",
     urgency: "Normal",
     condition: "",
     phone: "",
@@ -28,34 +31,41 @@ export default function RequestBlood() {
   const location = useLocation();
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
+    if (!currentUser) {
       navigate("/login", {
         state: { redirectTo: location.pathname },
       });
     }
-  }, []);
+  }, [currentUser, navigate, location.pathname]);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    setForm({ ...form, [name]: value });
+  };
 
-  const handleSubmit = async (e: any) => {
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
-    const user = getCurrentUser(); // ✅ Get the logged-in user
-    if (!user) {
+    if (!currentUser) {
       alert("Please login before submitting a request.");
       setLoading(false);
+      navigate("/login");
       return;
     }
 
     try {
       await addDoc(collection(db, "requests"), {
         ...form,
-        userId: user.uid,
+        units: parseInt(form.units, 10) || 0,
+        userId: currentUser.uid,
         createdAt: Timestamp.now(),
+        fulfilled: false,
+        status: "open",
       });
       setSubmitted(true);
     } catch (err) {
@@ -65,6 +75,16 @@ export default function RequestBlood() {
       setLoading(false);
     }
   };
+
+  const indianStates = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", 
+    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+    "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", 
+    "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", 
+    "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", 
+    "West Bengal"
+  ];
+
 
   return (
     <div className="min-h-screen bg-white px-4 py-12">
@@ -85,39 +105,43 @@ export default function RequestBlood() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input name="name" placeholder="Patient Name" required value={form.name} onChange={handleChange} />
               <Input name="relationship" placeholder="Relationship to Requester" required value={form.relationship} onChange={handleChange} />
-              <select
-                name="bloodGroup"
-                value={form.bloodGroup}
-                onChange={handleChange}
-                className="border rounded-md p-2 text-sm text-gray-700"
-                required
-              >
-                <option value="">Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
+              <Select onValueChange={(value) => handleSelectChange("bloodGroup", value)} value={form.bloodGroup}>
+                  <SelectTrigger><SelectValue placeholder="Select Blood Group" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A+">A+</SelectItem>
+                    <SelectItem value="A-">A-</SelectItem>
+                    <SelectItem value="B+">B+</SelectItem>
+                    <SelectItem value="B-">B-</SelectItem>
+                    <SelectItem value="AB+">AB+</SelectItem>
+                    <SelectItem value="AB-">AB-</SelectItem>
+                    <SelectItem value="O+">O+</SelectItem>
+                    <SelectItem value="O-">O-</SelectItem>
+                  </SelectContent>
+              </Select>
               <Input name="units" placeholder="Units Needed" required type="number" value={form.units} onChange={handleChange} />
               <Input name="hospital" placeholder="Hospital Name" required value={form.hospital} onChange={handleChange} />
-              <Input name="location" placeholder="Hospital Location" required value={form.location} onChange={handleChange} />
-              <select
-                name="urgency"
-                value={form.urgency}
-                onChange={handleChange}
-                className="border rounded-md p-2 text-sm text-gray-700"
-              >
-                <option value="Critical">Critical</option>
-                <option value="Urgent">Urgent</option>
-                <option value="Normal">Normal</option>
-              </select>
-              <Input name="date" type="date" placeholder="Needed Date" required value={form.date} onChange={handleChange} />
               <Input name="phone" type="tel" placeholder="Contact Number" required value={form.phone} onChange={handleChange} />
+              <Select onValueChange={(value) => handleSelectChange("urgency", value)} value={form.urgency}>
+                  <SelectTrigger><SelectValue placeholder="Urgency" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                    <SelectItem value="Urgent">Urgent</SelectItem>
+                    <SelectItem value="Normal">Normal</SelectItem>
+                  </SelectContent>
+              </Select>
+              <Input name="date" type="date" placeholder="Needed Date" required value={form.date} onChange={handleChange} />
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border rounded-lg bg-gray-50">
+                <Input name="location" className="sm:col-span-2" placeholder="Hospital Address / City" required value={form.location} onChange={handleChange} />
+                <Select onValueChange={(value) => handleSelectChange("state", value)} value={form.state}>
+                    <SelectTrigger className="sm:col-span-2"><SelectValue placeholder="Select State" /></SelectTrigger>
+                    <SelectContent>
+                        {indianStates.map(state => <SelectItem key={state} value={state}>{state}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+
 
             <Textarea
               name="condition"

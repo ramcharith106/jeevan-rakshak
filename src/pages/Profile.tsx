@@ -1,45 +1,50 @@
-// src/pages/Profile.tsx
 import { useEffect, useState } from "react";
-import { getCurrentUser, logout } from "@/lib/auth";
+import { logout } from "@/lib/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Profile() {
+  const { currentUser } = useAuth();
   const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
-      const user = getCurrentUser();
-      if (!user) {
+      if (!currentUser) {
         navigate("/login");
         return;
       }
 
-      const docRef = doc(db, "users", user.uid);
+      const docRef = doc(db, "users", currentUser.uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         setUserData(docSnap.data());
       } else {
+        // Fallback for user data not found in Firestore
         setUserData({
-          email: user.email,
-          name: user.displayName || "No name set",
+          email: currentUser.email,
+          name: currentUser.displayName || "No name set",
         });
       }
+      setLoading(false);
     };
 
-    fetchUser();
-  }, [navigate]);
+    if (currentUser) {
+        fetchUser();
+    }
+  }, [currentUser, navigate]);
 
   const handleLogout = async () => {
     await logout();
     navigate("/login");
   };
 
-  if (!userData) return <div className="text-center mt-10">Loading...</div>;
+  if (loading) return <div className="text-center mt-10">Loading...</div>;
 
   return (
     <div className="max-w-xl mx-auto mt-10 bg-white shadow-md p-6 rounded-lg border border-gray-200">
@@ -47,12 +52,15 @@ export default function Profile() {
       <div className="space-y-2 text-sm text-gray-700">
         <p><strong>Email:</strong> {userData.email}</p>
         {userData.name && <p><strong>Name:</strong> {userData.name}</p>}
+        {userData.bloodGroup && <p><strong>Blood Group:</strong> {userData.bloodGroup}</p>}
+        {userData.donationCount > 0 && <p><strong>Total Donations:</strong> <span className="font-bold text-lg text-blue-600">{userData.donationCount}</span></p>}
         {userData.phone && <p><strong>Phone:</strong> {userData.phone}</p>}
         {userData.aadhaar && <p><strong>Aadhaar:</strong> {userData.aadhaar}</p>}
         {userData.address && <p><strong>Address:</strong> {userData.address}</p>}
+        {userData.city && <p><strong>City:</strong> {userData.city}</p>}
+        {userData.state && <p><strong>State:</strong> {userData.state}</p>}
         {userData.dob && <p><strong>Date of Birth:</strong> {userData.dob}</p>}
         {userData.weight && <p><strong>Weight:</strong> {userData.weight} kg</p>}
-        {userData.bloodGroup && <p><strong>Blood Group:</strong> {userData.bloodGroup}</p>}
         {userData.healthInfo && <p><strong>Health Info:</strong> {userData.healthInfo}</p>}
         {userData.emergencyContact1 && (
           <p><strong>Emergency Contact 1:</strong> {userData.emergencyContact1}</p>
