@@ -30,7 +30,7 @@ export const submitBloodRequest = async (formData: any, user: User) => {
 };
 
 export const fetchOpenRequests = async () => {
-  const q = query(collection(db, "requests"), where("status", "==", "open"));
+  const q = query(collection(db, "requests"), where("status", "in", ["open", "pending_fulfillment"]));
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };

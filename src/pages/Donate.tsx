@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { acceptRequest, fetchOpenRequests, updateUserLastCheckedNotifications } from "@/lib/firestore";
@@ -10,12 +18,17 @@ import { Confetti } from "@/components/ui/Confetti";
 interface Request {
   id: string;
   name: string;
+  relationship: string;
   bloodGroup: string;
+  units: number;
   hospital: string;
-  urgency: string;
-  date: string;
-  phone: string;
   location: string;
+  urgency: string;
+  condition: string;
+  phone: string;
+  date: string;
+  userId: string; // Creator of the request
+  donorId?: string; // ID of the donor who accepted
   status?: "open" | "pending_fulfillment" | "fulfilled";
 }
 
@@ -23,6 +36,7 @@ export default function Donate() {
   const { currentUser } = useAuth();
   const [requests, setRequests] = useState<Request[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,16 +44,14 @@ export default function Donate() {
   useEffect(() => {
     const loadOpenRequests = async () => {
       if (!currentUser) {
-        navigate("/login", {
-          state: { redirectTo: location.pathname },
-        });
+        navigate("/login", { state: { redirectTo: location.pathname } });
         return;
       }
       
       const openRequestsData = await fetchOpenRequests();
-      setRequests(openRequestsData as Request[]);
+      const filteredData = openRequestsData.filter(req => req.userId !== currentUser.uid);
+      setRequests(filteredData as Request[]);
       
-      // When the user visits this page, update their timestamp to clear the notification
       await updateUserLastCheckedNotifications(currentUser.uid);
     };
 
@@ -48,21 +60,28 @@ export default function Donate() {
     }
   }, [currentUser, navigate, location.pathname]);
 
-  const handleAcceptDonation = async (req: Request) => {
-    if (!currentUser) {
+  const handleAcceptDonation = async () => {
+    if (!selectedRequest || !currentUser) {
       alert("You must be logged in to accept a request.");
       return;
     }
 
     try {
-        await acceptRequest(req, currentUser);
+        await acceptRequest(selectedRequest, currentUser);
         
         setShowSuccess(true);
         setTimeout(() => {
             setShowSuccess(false);
-            setRequests((prev) => prev.filter((r) => r.id !== req.id));
-            window.location.href = `tel:${req.phone}`;
-        }, 2000); // Show animation for 2 seconds
+            setRequests((prev) =>
+              prev.map((r) =>
+                r.id === selectedRequest.id
+                  ? { ...r, status: "pending_fulfillment", donorId: currentUser.uid }
+                  : r
+              )
+            );
+            window.location.href = `tel:${selectedRequest.phone}`;
+            setSelectedRequest(null); // Close the dialog
+        }, 2000);
 
     } catch (error) {
         console.error("Failed to accept request:", error);
@@ -73,7 +92,6 @@ export default function Donate() {
   const filteredRequests = requests.filter((req) =>
     selectedGroup ? req.bloodGroup === selectedGroup : true
   );
-
 
   return (
     <div className="min-h-screen bg-white py-12 px-4">
@@ -91,9 +109,7 @@ export default function Donate() {
           {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((group) => (
             <span
               key={group}
-              onClick={() =>
-                setSelectedGroup((prev) => (prev === group ? null : group))
-              }
+              onClick={() => setSelectedGroup((prev) => (prev === group ? null : group))}
               className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer border ${
                 selectedGroup === group
                   ? "bg-red-600 text-white border-red-600"
@@ -112,52 +128,84 @@ export default function Donate() {
             </p>
           ) : (
             filteredRequests.map((req) => (
-              <Card
-                key={req.id}
-                className="p-5 shadow-sm rounded-xl border hover:shadow-md flex flex-col"
-              >
+              <Card key={req.id} className="p-5 shadow-sm rounded-xl border hover:shadow-md flex flex-col">
                 <div className="flex-grow">
-                  <h3 className="text-xl font-semibold text-bloodRed mb-2">
-                    {req.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-1">
-                    🩸 Blood Group: <strong>{req.bloodGroup}</strong>
-                  </p>
-                  <p className="text-sm text-gray-600 mb-1">
-                    🏥 Hospital: {req.hospital}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-1">
-                    📍 Location: {req.location}
-                  </p>
+                  <h3 className="text-xl font-semibold text-bloodRed mb-2">{req.name}</h3>
+                  <p className="text-sm text-gray-600 mb-1">🩸 Blood Group: <strong>{req.bloodGroup}</strong></p>
+                  <p className="text-sm text-gray-600 mb-1">🏥 Hospital: {req.hospital}</p>
+                  <p className="text-sm text-gray-600 mb-1">📍 Location: {req.location}</p>
                   <p className="text-sm text-gray-600 mb-1">
                     ⚠️ Urgency:{" "}
-                    <span
-                      className={`font-semibold ${
-                        req.urgency === "Critical"
-                          ? "text-red-600"
-                          : req.urgency === "Urgent"
-                          ? "text-yellow-600"
-                          : "text-blue-600"
-                      }`}
-                    >
-                      {req.urgency}
-                    </span>
+                    <span className={`font-semibold ${
+                        req.urgency === "Critical" ? "text-red-600" : req.urgency === "Urgent" ? "text-yellow-600" : "text-blue-600"
+                      }`}>{req.urgency}</span>
                   </p>
-                  <p className="text-sm text-gray-600 mb-4">
-                    📅 Needed By: {req.date}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-4">📅 Needed By: {req.date}</p>
                 </div>
-                <Button
-                  onClick={() => handleAcceptDonation(req)}
-                  className="w-full bg-red-600 text-white hover:bg-red-700 mt-auto"
-                >
-                  📞 Accept & Call
-                </Button>
+                
+                {req.status === "pending_fulfillment" ? (
+                  <Button disabled className="w-full bg-yellow-500 text-white mt-auto cursor-not-allowed">
+                    {req.donorId === currentUser?.uid ? "✅ You Accepted" : "Pending Fulfillment"}
+                  </Button>
+                ) : (
+                  <Button onClick={() => setSelectedRequest(req)} className="w-full bg-red-600 text-white hover:bg-red-700 mt-auto">
+                    View Details & Accept
+                  </Button>
+                )}
               </Card>
             ))
           )}
         </div>
       </div>
+
+      {selectedRequest && (
+        <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Confirm Donation for {selectedRequest.name}</DialogTitle>
+              <DialogDescription>
+                Please review the request details below. By confirming, you commit to donating.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4 text-sm">
+              <div className="grid grid-cols-2 items-center gap-4">
+                <p className="text-gray-500">Patient</p>
+                <p className="font-semibold">{selectedRequest.name} ({selectedRequest.relationship})</p>
+              </div>
+               <div className="grid grid-cols-2 items-center gap-4">
+                <p className="text-gray-500">Blood Group</p>
+                <p className="font-semibold text-red-600">{selectedRequest.bloodGroup}</p>
+              </div>
+               <div className="grid grid-cols-2 items-center gap-4">
+                <p className="text-gray-500">Units Needed</p>
+                <p className="font-semibold">{selectedRequest.units}</p>
+              </div>
+              <hr />
+              <div className="grid grid-cols-2 items-center gap-4">
+                <p className="text-gray-500">Hospital</p>
+                <p className="font-semibold">{selectedRequest.hospital}</p>
+              </div>
+              <div className="grid grid-cols-2 items-center gap-4">
+                <p className="text-gray-500">Location</p>
+                <p className="font-semibold">{selectedRequest.location}</p>
+              </div>
+              <hr />
+               <div className="grid grid-cols-1 items-center gap-2">
+                <p className="text-gray-500">Medical Condition/Note</p>
+                <p className="font-semibold p-2 bg-gray-50 rounded-md">
+                  {selectedRequest.condition || "No additional notes."}
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedRequest(null)}>Cancel</Button>
+              <Button onClick={handleAcceptDonation} className="bg-red-600 hover:bg-red-700 text-white">
+                📞 Confirm & Call
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
