@@ -1,99 +1,135 @@
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-const myths = [
-    {
-        question: "Myth: Donating blood is painful.",
-        answer: "Fact: The only pain you'll feel is a quick, slight pinch from the needle, similar to a regular injection. The discomfort is minimal and temporary."
-    },
-    {
-        question: "Myth: I will feel weak and tired after donating blood.",
-        answer: "Fact: Most donors feel fine after resting for a short period and having refreshments. Your body replaces the donated blood volume within 24-48 hours. It's important to be well-hydrated before donating."
-    },
-    {
-        question: "Myth: I can't donate because I have high blood pressure or diabetes.",
-        answer: "Fact: You can donate blood if your blood pressure is under control (below 180/100 mmHg) at the time of donation. Diabetics can also donate if their condition is managed through diet or oral medication, and their blood sugar is under control."
-    },
-    {
-        question: "Myth: Donating blood can lead to infections like HIV.",
-        answer: "Fact: This is impossible. A brand new, sterile, single-use needle is used for every donor and is properly discarded afterward. There is no risk of contracting any blood-borne disease."
-    }
-];
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
 
+  const handleNavigation = (path: string) => {
+    if (currentUser) {
+      navigate(path);
+    } else {
+      navigate("/login", { state: { redirectTo: path } });
+    }
+  };
+
   return (
-    <div className="flex flex-col">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="text-center py-20 px-4 bg-gradient-to-r from-red-50 via-blue-50 to-red-50">
-        <h1 className="text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-blue-600">
-          Be a Lifesaver. Donate Blood.
-        </h1>
-        <p className="text-xl text-gray-700 max-w-2xl mx-auto mb-8">
-          Join our community of voluntary blood donors. Your contribution can save up to three lives. Find requests, respond in minutes, and make a real difference.
-        </p>
-        <div className="flex justify-center gap-4">
-          <Button
-            onClick={() => navigate("/donate")}
-            className="bg-red-600 hover:bg-red-700 text-white text-lg px-8 py-6"
-          >
-            🩸 Find a Request
-          </Button>
-          <Button
-            onClick={() => navigate("/request")}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-6"
-          >
-            ➕ Post a Request
-          </Button>
+      <section className="relative bg-red-50 py-20 md:py-32">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-10"
+          style={{ backgroundImage: "url('/blood-donation-pattern.svg')" }}
+        ></div>
+        <div className="container mx-auto px-4 text-center relative">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-gray-800 mb-4 leading-tight">
+            Connect to Save Lives
+          </h1>
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            Jeevan Rakshak is a real-time platform connecting blood donors with
+            recipients instantly. Be a hero, save a life today.
+          </p>
+          <div className="flex justify-center gap-4 flex-wrap">
+            <Button
+              onClick={() => handleNavigation("/request-blood")}
+              size="lg"
+              className="bg-red-600 text-white hover:bg-red-700 text-lg px-8 py-6 rounded-full shadow-lg"
+            >
+              🩸 Post a Request
+            </Button>
+            <Button
+              onClick={() => handleNavigation("/donate")}
+              size="lg"
+              variant="outline"
+              className="text-red-600 border-red-600 hover:bg-red-100 hover:text-red-700 text-lg px-8 py-6 rounded-full shadow-lg"
+            >
+              ❤️ Find a Donor
+            </Button>
+          </div>
         </div>
-      </div>
+      </section>
 
-       {/* Educational Section */}
-       <div className="bg-white py-16 px-4">
-        <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl font-extrabold text-center mb-12">
-                Learn About Donation
-            </h2>
-
-            {/* Eligibility Section */}
-            <Card className="mb-8">
-                <CardHeader>
-                    <CardTitle>Are You Eligible to Donate?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ul className="list-disc list-inside space-y-2 text-gray-700">
-                        <li><strong>Age:</strong> 18-65 years.</li>
-                        <li><strong>Weight:</strong> At least 50 kg (110 lbs).</li>
-                        <li><strong>Health:</strong> You must be in good health and feeling well on the day of donation.</li>
-                        <li><strong>Hemoglobin:</strong> At least 12.5 g/dL.</li>
-                    </ul>
-                </CardContent>
-            </Card>
-
-            {/* Myth Busting Section */}
-            <div>
-                <h3 className="text-3xl font-bold text-center mb-6">Myths vs. Facts</h3>
-                <Accordion type="single" collapsible className="w-full">
-                    {myths.map((myth, index) => (
-                        <AccordionItem value={`item-${index}`} key={index}>
-                            <AccordionTrigger className="text-left font-semibold">{myth.question}</AccordionTrigger>
-                            <AccordionContent className="text-gray-700">
-                                {myth.answer}
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
+      {/* How It Works Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
+            How It Works
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
+            <div className="p-6">
+              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-600 text-3xl mb-4 mx-auto">
+                1
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Request Blood</h3>
+              <p className="text-gray-600">
+                Create a blood request with patient details. Our system will
+                instantly notify all matching donors in your area.
+              </p>
             </div>
+            <div className="p-6">
+              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-600 text-3xl mb-4 mx-auto">
+                2
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Get Notified</h3>
+              <p className="text-gray-600">
+                Donors receive a real-time notification about the urgent need
+                and can accept the request with a single tap.
+              </p>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-600 text-3xl mb-4 mx-auto">
+                3
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Save a Life</h3>
+              <p className="text-gray-600">
+                The donor connects directly with the requester to coordinate the
+                donation, making a timely and life-saving impact.
+              </p>
+            </div>
+          </div>
         </div>
-       </div>
+      </section>
+
+      {/* Statistics Section */}
+      <section className="bg-gray-50 py-20">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div>
+              <h4 className="text-4xl font-bold text-red-600">10,000+</h4>
+              <p className="text-gray-600">Registered Donors</p>
+            </div>
+            <div>
+              <h4 className="text-4xl font-bold text-red-600">5,000+</h4>
+              <p className="text-gray-600">Lives Saved</p>
+            </div>
+            <div>
+              <h4 className="text-4xl font-bold text-red-600">Under 10 Mins</h4>
+              <p className="text-gray-600">Average Response Time</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action Section */}
+      <section className="py-20 bg-white text-center">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">
+            Become a Donor Today
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto mb-8">
+            Your single act of kindness can be a ray of hope for someone in
+            need. Register as a donor and join our community of life-savers.
+          </p>
+          <Button
+            onClick={() => navigate("/register")}
+            size="lg"
+            className="bg-red-600 text-white hover:bg-red-700 text-lg px-10 py-6 rounded-full shadow-lg"
+          >
+            Join Now
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }
